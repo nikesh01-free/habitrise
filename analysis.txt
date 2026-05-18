@@ -1,0 +1,35 @@
+Analyzing habitrise...                                          
+
+  error • Invalid constant value • lib/features/analytics/presentation/analytics_screen.dart:106:53 • invalid_constant
+  error • Invalid constant value • lib/features/analytics/presentation/analytics_screen.dart:110:20 • invalid_constant
+  error • Invalid constant value • lib/features/analytics/presentation/analytics_screen.dart:280:47 • invalid_constant
+  error • Invalid constant value • lib/features/focus/presentation/focus_screen.dart:209:44 • invalid_constant
+  error • Invalid constant value • lib/features/focus/presentation/widgets/focus_timer_summary_card.dart:40:49 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/add_habit_screen.dart:85:44 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/add_habit_screen.dart:108:43 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/add_habit_screen.dart:134:24 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/add_habit_screen.dart:177:32 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/edit_habit_screen.dart:108:45 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/edit_habit_screen.dart:120:24 • invalid_constant
+  error • Invalid constant value • lib/features/habits/presentation/edit_habit_screen.dart:161:32 • invalid_constant
+  error • Invalid constant value • lib/features/meals/presentation/meals_screen.dart:281:48 • invalid_constant
+  error • Invalid constant value • lib/features/meals/presentation/meals_screen.dart:285:20 • invalid_constant
+  error • Invalid constant value • lib/features/meals/presentation/widgets/meal_summary_card.dart:39:48 • invalid_constant
+  error • Invalid constant value • lib/features/mood/presentation/widgets/mood_quick_select_card.dart:31:53 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/goal_selection_screen.dart:60:24 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/permissions_screen.dart:47:24 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/permissions_screen.dart:66:36 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/permissions_screen.dart:109:36 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/starter_habits_screen.dart:61:24 • invalid_constant
+  error • Invalid constant value • lib/features/onboarding/presentation/welcome_screen.dart:28:24 • invalid_constant
+  error • Invalid constant value • lib/features/rewards/presentation/rewards_screen.dart:10:52 • invalid_constant
+  error • Invalid constant value • lib/features/settings/presentation/widgets/profile_edit_bottom_sheet.dart:99:58 • invalid_constant
+  error • Invalid constant value • lib/features/sleep/presentation/widgets/sleep_summary_card.dart:76:24 • invalid_constant
+  error • Invalid constant value • lib/features/sleep/presentation/widgets/sleep_summary_card.dart:217:43 • invalid_constant
+  error • Invalid constant value • lib/features/steps/presentation/widgets/step_progress_card.dart:37:55 • invalid_constant
+  error • Invalid constant value • lib/features/steps/presentation/widgets/step_progress_card.dart:93:40 • invalid_constant
+  error • The values in a const list literal must be constants • lib/features/steps/presentation/widgets/step_progress_card.dart:93:40 • non_constant_list_element
+  error • Invalid constant value • lib/features/water/presentation/widgets/water_progress_card.dart:79:50 • invalid_constant
+  error • Invalid constant value • lib/features/water/presentation/widgets/water_progress_card.dart:171:49 • invalid_constant
+  error • Invalid constant value • lib/features/water/presentation/widgets/water_progress_card.dart:187:22 • invalid_constant
+
