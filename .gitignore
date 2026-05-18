@@ -49,3 +49,8 @@ app.*.map.json
 # Keystore
 android/key.properties
 *.jks
+
+# Temporary development logs/context
+Code.txt
+analysis.txt
+full_logs.txt
