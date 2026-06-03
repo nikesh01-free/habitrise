@@ -5,11 +5,6 @@ import 'package:habitrise/core/theme/app_text_styles.dart';
 import 'package:habitrise/core/theme/app_colors.dart';
 import 'package:habitrise/features/profile/presentation/providers/profile_providers.dart';
 import 'package:habitrise/features/rewards/presentation/rewards_screen.dart';
-import 'package:habitrise/features/meals/presentation/meals_screen.dart';
-import 'package:habitrise/features/water/presentation/water_history_screen.dart';
-import 'package:habitrise/features/focus/presentation/focus_history_screen.dart';
-import 'package:habitrise/features/gym/presentation/screens/gym_schedule_screen.dart';
-import 'package:habitrise/features/settings/presentation/providers/settings_providers.dart';
 
 class DashboardHeaderSection extends ConsumerWidget {
   const DashboardHeaderSection({super.key});
@@ -26,14 +21,6 @@ class DashboardHeaderSection extends ConsumerWidget {
     if (hour < 12) return Icons.wb_sunny_rounded;
     if (hour < 17) return Icons.wb_twilight_rounded;
     return Icons.nightlight_round;
-  }
-
-  void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _QuickActionsSheet(),
-    );
   }
 
   @override
@@ -107,7 +94,12 @@ class DashboardHeaderSection extends ConsumerWidget {
               ),
               const SizedBox(width: 16),
               GestureDetector(
-                onTap: () => _showQuickActions(context),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RewardsScreen()),
+                  );
+                },
                 child: Container(
                   width: 52,
                   height: 52,
@@ -120,7 +112,7 @@ class DashboardHeaderSection extends ConsumerWidget {
                     ),
                   ),
                   child: const Center(
-                    child: Icon(Icons.menu_rounded, color: Colors.white, size: 24),
+                    child: Icon(Icons.emoji_events_rounded, color: Colors.white, size: 24),
                   ),
                 ),
               ),
@@ -153,166 +145,6 @@ class DashboardHeaderSection extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _QuickActionsSheet extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settings = ref.watch(settingsProvider);
-    final gymEnabled = settings.gymFeatureEnabled;
-
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppNeutral.n800 : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppNeutral.n300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'QUICK ACCESS',
-                style: AppTextStyles.bodyS.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: AppNeutral.n500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _actionTile(
-                      icon: Icons.emoji_events,
-                      label: 'Trophy Room',
-                      subtitle: 'View your achievements',
-                      color: const Color(0xFFF59E0B),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const RewardsScreen()));
-                      },
-                      isDark: isDark,
-                    ),
-                    _actionTile(
-                      icon: Icons.restaurant,
-                      label: 'Nutrition',
-                      subtitle: 'Meal tracking',
-                      color: const Color(0xFF22C55E),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MealsScreen()));
-                      },
-                      isDark: isDark,
-                    ),
-                    _actionTile(
-                      icon: Icons.water_drop,
-                      label: 'Hydration',
-                      subtitle: 'Water history',
-                      color: const Color(0xFF0EA5E9),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WaterHistoryScreen()));
-                      },
-                      isDark: isDark,
-                    ),
-                    _actionTile(
-                      icon: Icons.timer,
-                      label: 'Focus History',
-                      subtitle: 'Session logs',
-                      color: const Color(0xFF7C3AED),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FocusHistoryScreen()));
-                      },
-                      isDark: isDark,
-                    ),
-                    if (gymEnabled)
-                      _actionTile(
-                        icon: Icons.fitness_center,
-                        label: 'Gym Tracker',
-                        subtitle: 'Weekly routine',
-                        color: const Color(0xFFEC4899),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const GymScheduleScreen()));
-                        },
-                        isDark: isDark,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _actionTile({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-    required bool isDark,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: isDark ? AppNeutral.n700 : AppNeutral.n50,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: AppTextStyles.bodyM.copyWith(fontWeight: FontWeight.w600)),
-                  Text(subtitle, style: AppTextStyles.bodyS.copyWith(color: AppNeutral.n500)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppNeutral.n400),
-          ],
-        ),
       ),
     );
   }

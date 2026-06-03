@@ -32,7 +32,7 @@ class GymScheduleModel {
     };
   }
 
-  factory GymScheduleModel.fromMap(Map<dynamic, dynamic> map) {
+  factory GymScheduleModel.fromMap(Map<String, dynamic> map) {
     return GymScheduleModel(
       id: map['id'] as String? ?? '',
       dayOfWeek: map['dayOfWeek'] as String? ?? 'Monday',

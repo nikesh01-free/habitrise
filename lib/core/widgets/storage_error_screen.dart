@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:habitrise/core/theme/app_colors.dart';
 import 'package:habitrise/core/theme/app_text_styles.dart';
+import 'package:path_provider/path_provider.dart';
 
 class StorageErrorScreen extends StatelessWidget {
   const StorageErrorScreen({super.key});
@@ -115,27 +117,36 @@ class StorageErrorScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              // Since Hive failed, we can try to delete the directory to force a hard reset.
+              // Delete all Hive .hive and .lock files from the app documents dir
               try {
-                // Not ideal to import path_provider here but this is a critical rescue screen.
-                // It is better to use HiveStorageService.resetAllData() or similar.
-                // Assuming the user restarts the app after this.
-              } catch (e) {
-                // Ignore
+                final appDir = await getApplicationDocumentsDirectory();
+                final hiveFiles = appDir
+                    .listSync()
+                    .whereType<File>()
+                    .where((f) =>
+                        f.path.endsWith('.hive') || f.path.endsWith('.lock'))
+                    .toList();
+                for (final file in hiveFiles) {
+                  await file.delete();
+                }
+              } catch (_) {
+                // Ignore errors — file may already be gone
               }
-              showDialog(
-                context: context,
-                builder: (ctx2) => AlertDialog(
-                  title: const Text('Data Reset'),
-                  content: const Text('Data reset attempted. Please completely close and restart the app.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx2),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              );
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (ctx2) => AlertDialog(
+                    title: const Text('Data Reset'),
+                    content: const Text('Data reset attempted. Please completely close and restart the app.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx2),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              }
             },
             child: const Text(
               'Reset',

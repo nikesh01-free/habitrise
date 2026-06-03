@@ -9,6 +9,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/providers/permissions_providers.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../features/settings/presentation/providers/settings_providers.dart';
 
 class PermissionsScreen extends ConsumerStatefulWidget {
   const PermissionsScreen({super.key});
@@ -164,6 +165,17 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                 onPressed: () async {
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('onboarding_completed', true);
+
+                  // Apply goal-driven defaults
+                  final goals = prefs.getStringList('selected_goals') ?? [];
+                  final settingsNotifier = ref.read(settingsProvider.notifier);
+                  if (goals.contains('Sleep')) {
+                    await settingsNotifier.updateThemeMode('dark');
+                  }
+                  if (goals.contains('Fitness')) {
+                    await settingsNotifier.toggleGymFeature(true);
+                  }
+
                   if (context.mounted) {
                     Navigator.of(context).pushNamedAndRemoveUntil(
                       AppRoutes.dashboard,

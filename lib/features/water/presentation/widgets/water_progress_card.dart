@@ -8,6 +8,8 @@ import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_icons.dart';
 import '../../../water/presentation/water_history_screen.dart';
+import '../../../../core/widgets/app_input.dart';
+import '../../../../core/widgets/app_button.dart';
 
 class WaterProgressCard extends StatelessWidget {
   final int currentMl;
@@ -119,19 +121,78 @@ class WaterProgressCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            '$currentMl ml',
-            style: AppTextStyles.h3.copyWith(
-              color: isDark ? Colors.white : AppNeutral.n900,
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$currentMl',
+                  style: AppTextStyles.h3.copyWith(
+                    color: isDark ? Colors.white : AppNeutral.n900,
+                  ),
+                ),
+                TextSpan(
+                  text: '/$goalMl',
+                  style: AppTextStyles.bodyS.copyWith(
+                    color: isDark ? AppNeutral.n400 : AppNeutral.n500,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextSpan(
+                  text: ' ml',
+                  style: AppTextStyles.bodyS.copyWith(
+                    color: isDark ? AppNeutral.n500 : AppNeutral.n700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Water Intake',
-            style: AppTextStyles.bodyS.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppNeutral.n400 : AppNeutral.n600,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Water Intake',
+                style: AppTextStyles.bodyS.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppNeutral.n400 : AppNeutral.n600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WaterHistoryScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'View History',
+                      style: AppTextStyles.bodyS.copyWith(
+                        color: contentColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 12,
+                      color: contentColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -150,11 +211,19 @@ class _WaterActionSheet extends StatefulWidget {
 
 class _WaterActionSheetState extends State<_WaterActionSheet> {
   bool _reminders = false;
+  late final TextEditingController _customCtrl;
 
   @override
   void initState() {
     super.initState();
+    _customCtrl = TextEditingController();
     _fetchPref();
+  }
+
+  @override
+  void dispose() {
+    _customCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchPref() async {
@@ -190,6 +259,40 @@ class _WaterActionSheetState extends State<_WaterActionSheet> {
               _buildQuickBtn(250),
               _buildQuickBtn(500),
               _buildQuickBtn(750),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: AppInput(
+                  label: 'Custom Amount',
+                  hint: 'Amount in ml',
+                  controller: _customCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(5),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              AppButton(
+                label: 'Add',
+                size: AppButtonSize.md,
+                onPressed: () {
+                  final text = _customCtrl.text.trim();
+                  if (text.isNotEmpty) {
+                    final amount = int.tryParse(text);
+                    if (amount != null && amount > 0) {
+                      HapticFeedback.mediumImpact();
+                      Navigator.pop(context);
+                      widget.onAdd(amount);
+                    }
+                  }
+                },
+              ),
             ],
           ),
           const SizedBox(height: 24),

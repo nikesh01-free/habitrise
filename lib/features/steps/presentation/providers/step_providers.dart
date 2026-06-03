@@ -5,6 +5,7 @@ import 'package:pedometer/pedometer.dart';
 import '../../../../core/services/permission_service.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../data/repositories/step_repository.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 
 final stepRepositoryProvider = Provider<StepRepository>((ref) {
   return StepRepository();
@@ -66,9 +67,12 @@ class StepNotifier extends AutoDisposeNotifier<StepSystemState> {
     final log = repo.getStepsByDate(dateStr);
     _startDayStepBase = log?.steps ?? 0;
 
+    final profile = ProfileRepository().getProfile();
+    final defaultGoal = profile?.dailyStepGoal ?? 8000;
+
     state = StepSystemState(
       currentSteps: _startDayStepBase,
-      goalSteps: log?.goalSteps ?? 8000,
+      goalSteps: log?.goalSteps ?? defaultGoal,
       isLoading: false,
     );
 

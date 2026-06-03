@@ -8,6 +8,7 @@ import 'package:habitrise/core/constants/app_assets.dart';
 import 'package:habitrise/core/widgets/app_empty_state.dart';
 import 'package:habitrise/features/rewards/data/models/reward_model.dart';
 import 'providers/rewards_providers.dart';
+import '../../../../core/widgets/app_loading_state.dart';
 
 class RewardsScreen extends ConsumerWidget {
   const RewardsScreen({super.key});
@@ -31,12 +32,14 @@ class RewardsScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: rewardsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingState(),
         error: (err, _) => Center(
           child: AppEmptyState(
             icon: AppIcons.error,
-            title: 'Error',
+            title: 'Failed to load rewards',
             description: err.toString(),
+            buttonLabel: 'Retry',
+            onPressed: () => ref.refresh(allRewardsProvider),
           ),
         ),
         data: (rewards) {

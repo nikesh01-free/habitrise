@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../providers/gym_providers.dart';
+import '../../../../core/widgets/app_loading_state.dart';
 
 class GymDashboardSection extends ConsumerWidget {
   const GymDashboardSection({super.key});
@@ -66,7 +67,7 @@ class GymDashboardSection extends ConsumerWidget {
           },
           loading: () => const SizedBox(
             height: 100,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            child: AppLoadingState(),
           ),
           error: (e, s) => const SizedBox.shrink(),
         ),

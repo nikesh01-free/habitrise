@@ -6,6 +6,7 @@ import 'package:habitrise/core/theme/app_text_styles.dart';
 import 'package:habitrise/core/theme/app_icons.dart';
 import 'package:habitrise/core/widgets/app_button.dart';
 import 'package:habitrise/core/widgets/app_toast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GoalSelectionScreen extends StatefulWidget {
   const GoalSelectionScreen({super.key});
@@ -35,12 +36,17 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
     });
   }
 
-  void _continue() {
+  Future<void> _continue() async {
     if (_selected.isEmpty) {
       AppToast.show(context, 'Select at least one goal', type: AppToastType.warning);
       return;
     }
-    Navigator.pushNamed(context, AppRoutes.onboardingHabits);
+    // Persist selected goals for use in PermissionsScreen
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('selected_goals', _selected.toList());
+    if (mounted) {
+      Navigator.pushNamed(context, AppRoutes.onboardingProfile);
+    }
   }
 
   @override
@@ -69,7 +75,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _goals.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (ctx, index) {
                     final goal = _goals[index];
                     final label = goal['label']!;

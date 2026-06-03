@@ -2,6 +2,7 @@ class AppRoutes {
   static const String splash = '/';
   static const String onboardingWelcome = '/onboarding/welcome';
   static const String onboardingGoals = '/onboarding/goals';
+  static const String onboardingProfile = '/onboarding/profile';
   static const String onboardingHabits = '/onboarding/habits';
   static const String onboardingPermissions = '/onboarding/permissions';
   static const String dashboard = '/dashboard';

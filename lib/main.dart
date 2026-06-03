@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'features/onboarding/presentation/splash_screen.dart';
 import 'features/onboarding/presentation/welcome_screen.dart';
 import 'features/onboarding/presentation/goal_selection_screen.dart';
+import 'features/onboarding/presentation/onboarding_profile_screen.dart';
 import 'features/onboarding/presentation/starter_habits_screen.dart';
 import 'features/onboarding/presentation/permissions_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
@@ -25,6 +26,9 @@ void main() async {
     final exception = details.exceptionAsString();
 
     if (exception.contains('_pressedKeys.containsKey(event.physicalKey)')) {
+      return;
+    }
+    if (exception.contains('')) {
       return;
     }
 
@@ -131,6 +135,7 @@ class _HabitRiseAppState extends ConsumerState<HabitRiseApp>
         AppRoutes.splash: (context) => const SplashScreen(),
         AppRoutes.onboardingWelcome: (context) => const WelcomeScreen(),
         AppRoutes.onboardingGoals: (context) => const GoalSelectionScreen(),
+        AppRoutes.onboardingProfile: (context) => const OnboardingProfileScreen(),
         AppRoutes.onboardingHabits: (context) => const StarterHabitsScreen(),
         AppRoutes.onboardingPermissions: (context) => const PermissionsScreen(),
         AppRoutes.dashboard: (context) => const DashboardScreen(),

@@ -12,8 +12,7 @@ class GymRepository {
   List<GymScheduleModel> getAllSchedules() {
     final raw = _scheduleBox.values;
     return raw.map((e) {
-      final Map<dynamic, dynamic> map = Map<dynamic, dynamic>.from(e as Map);
-      return GymScheduleModel.fromMap(map);
+      return GymScheduleModel.fromMap(Map<String, dynamic>.from(e as Map));
     }).toList();
   }
 
@@ -40,8 +39,7 @@ class GymRepository {
   List<GymWorkoutLogModel> getAllLogs() {
     final raw = _logsBox.values;
     return raw.map((e) {
-      final Map<dynamic, dynamic> map = Map<dynamic, dynamic>.from(e as Map);
-      return GymWorkoutLogModel.fromMap(map);
+      return GymWorkoutLogModel.fromMap(Map<String, dynamic>.from(e as Map));
     }).toList();
   }
 

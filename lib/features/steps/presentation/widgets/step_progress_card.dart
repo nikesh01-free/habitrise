@@ -169,10 +169,23 @@ class StepProgressCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Text(
-            '$steps',
-            style: AppTextStyles.h3.copyWith(
-              color: isDark ? Colors.white : AppNeutral.n900,
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$steps',
+                  style: AppTextStyles.h3.copyWith(
+                    color: isDark ? Colors.white : AppNeutral.n900,
+                  ),
+                ),
+                TextSpan(
+                  text: '/$goalSteps',
+                  style: AppTextStyles.bodyS.copyWith(
+                    color: isDark ? AppNeutral.n400 : AppNeutral.n500,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 4),

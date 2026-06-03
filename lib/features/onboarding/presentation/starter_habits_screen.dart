@@ -1,34 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:habitrise/core/constants/app_routes.dart';
 import 'package:habitrise/core/theme/app_colors.dart';
 import 'package:habitrise/core/theme/app_text_styles.dart';
 import 'package:habitrise/core/theme/app_icons.dart';
 import 'package:habitrise/core/widgets/app_button.dart';
+import 'package:habitrise/core/widgets/app_toast.dart';
+import '../../habits/presentation/providers/habit_providers.dart';
 
-class StarterHabitsScreen extends StatefulWidget {
+class StarterHabitsScreen extends ConsumerStatefulWidget {
   const StarterHabitsScreen({super.key});
 
   @override
-  State<StarterHabitsScreen> createState() => _StarterHabitsScreenState();
+  ConsumerState<StarterHabitsScreen> createState() =>
+      _StarterHabitsScreenState();
 }
 
-class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
+class _StarterHabitsScreenState extends ConsumerState<StarterHabitsScreen> {
   final List<Map<String, String>> _habits = [
-    {'title': 'Hydrate With 8 Glasses', 'icon': 'water_drop'},
-    {'title': 'Read For 20 Minutes', 'icon': 'menu_book'},
-    {'title': 'Sleep For 7-8 Hours', 'icon': 'bedtime'},
-    {'title': 'Reach 8,000 Steps', 'icon': 'directions_walk'},
+    {'title': 'Hydrate With 8 Glasses', 'icon': 'water_drop', 'category': 'health'},
+    {'title': 'Read For 20 Minutes', 'icon': 'menu_book', 'category': 'study'},
+    {'title': 'Sleep For 7-8 Hours', 'icon': 'bedtime', 'category': 'wellness'},
+    {'title': 'Reach 8,000 Steps', 'icon': 'directions_walk', 'category': 'fitness'},
   ];
   final Set<int> _selected = {0, 1, 2, 3};
+  bool _isLoading = false;
 
   IconData _getIcon(String icon) {
     switch (icon) {
-      case 'water_drop': return AppIcons.water;
-      case 'menu_book': return AppIcons.bookOpen;
-      case 'bedtime': return AppIcons.sleep;
-      case 'directions_walk': return AppIcons.steps;
-      default: return AppIcons.check;
+      case 'water_drop':
+        return AppIcons.water;
+      case 'menu_book':
+        return AppIcons.bookOpen;
+      case 'bedtime':
+        return AppIcons.sleep;
+      case 'directions_walk':
+        return AppIcons.steps;
+      default:
+        return AppIcons.check;
     }
   }
 
@@ -41,6 +51,48 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
         _selected.add(index);
       }
     });
+  }
+
+  Future<void> _generateHabits() async {
+    if (_selected.isEmpty) {
+      AppToast.show(
+        context,
+        'Select at least one habit',
+        type: AppToastType.warning,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    int count = 0;
+    try {
+      final controller = ref.read(habitControllerProvider);
+      for (final index in _selected) {
+        final habit = _habits[index];
+        await controller.addHabit(
+          title: habit['title']!,
+          category: habit['category']!,
+          type: 'checkbox',
+          frequency: 'daily',
+          colorHex: '#4F6EF7',
+        );
+        count++;
+      }
+      if (mounted) {
+        AppToast.show(
+          context,
+          '$count habit${count == 1 ? '' : 's'} created!',
+          type: AppToastType.success,
+        );
+        Navigator.pushNamed(context, AppRoutes.onboardingPermissions);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'Failed to create habits', type: AppToastType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -58,7 +110,9 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
             children: [
               Text(
                 'Launch Setup',
-                style: AppTextStyles.h2.copyWith(color: isDark ? Colors.white : AppNeutral.n900),
+                style: AppTextStyles.h2.copyWith(
+                  color: isDark ? Colors.white : AppNeutral.n900,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -69,7 +123,8 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _habits.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
                   itemBuilder: (ctx, index) {
                     final habit = _habits[index];
                     final isSel = _selected.contains(index);
@@ -80,10 +135,14 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: isSel ? AppColors.primary500.withAlpha(15) : (isDark ? AppNeutral.n800 : Colors.white),
+                          color: isSel
+                              ? AppColors.primary500.withAlpha(15)
+                              : (isDark ? AppNeutral.n800 : Colors.white),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSel ? AppColors.primary500 : (isDark ? AppNeutral.n700 : AppNeutral.n200),
+                            color: isSel
+                                ? AppColors.primary500
+                                : (isDark ? AppNeutral.n700 : AppNeutral.n200),
                             width: isSel ? 2 : 1,
                           ),
                         ),
@@ -92,12 +151,18 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isSel ? AppColors.primary500.withAlpha(20) : (isDark ? AppNeutral.n700 : AppNeutral.n50),
+                                color: isSel
+                                    ? AppColors.primary500.withAlpha(20)
+                                    : (isDark
+                                          ? AppNeutral.n700
+                                          : AppNeutral.n50),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 _getIcon(habit['icon']!),
-                                color: isSel ? AppColors.primary600 : AppNeutral.n400,
+                                color: isSel
+                                    ? AppColors.primary600
+                                    : AppNeutral.n400,
                                 size: 22,
                               ),
                             ),
@@ -107,7 +172,11 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
                                 habit['title']!,
                                 style: AppTextStyles.bodyM.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: isSel ? AppColors.primary600 : (isDark ? Colors.white : AppNeutral.n900),
+                                  color: isSel
+                                      ? AppColors.primary600
+                                      : (isDark
+                                            ? Colors.white
+                                            : AppNeutral.n900),
                                 ),
                               ),
                             ),
@@ -117,13 +186,23 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
                               height: 24,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSel ? AppColors.primary500 : Colors.transparent,
+                                color: isSel
+                                    ? AppColors.primary500
+                                    : Colors.transparent,
                                 border: Border.all(
-                                  color: isSel ? AppColors.primary500 : AppNeutral.n300,
+                                  color: isSel
+                                      ? AppColors.primary500
+                                      : AppNeutral.n300,
                                   width: 2,
                                 ),
                               ),
-                              child: isSel ? const Icon(AppIcons.check, size: 14, color: Colors.white) : null,
+                              child: isSel
+                                  ? const Icon(
+                                      AppIcons.check,
+                                      size: 14,
+                                      color: Colors.white,
+                                    )
+                                  : null,
                             ),
                           ],
                         ),
@@ -137,7 +216,8 @@ class _StarterHabitsScreenState extends State<StarterHabitsScreen> {
                 label: 'Pre-generate Habits',
                 fullWidth: true,
                 size: AppButtonSize.lg,
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.onboardingPermissions),
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _generateHabits,
               ),
             ],
           ),

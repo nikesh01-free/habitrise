@@ -19,6 +19,7 @@ import '../../profile/data/models/profile_model.dart';
 import 'widgets/profile_edit_bottom_sheet.dart';
 import 'providers/settings_providers.dart';
 import '../../settings/data/models/app_settings_model.dart';
+import '../../habits/presentation/habit_routines_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -230,6 +231,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       ref.read(settingsProvider.notifier).toggleGymFeature(v),
                   isDark: isDark,
                 ),
+                _buildActionTile(
+                  icon: AppIcons.habits,
+                  title: 'Habit Routines',
+                  subtitle: 'Manage your daily habit routines',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HabitRoutinesScreen()),
+                    );
+                  },
+                  isDark: isDark,
+                ),
               ], isDark),
             ),
             SliverToBoxAdapter(
@@ -246,6 +259,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   title: 'Clear Debug Logs',
                   subtitle: 'Remove saved crash logs',
                   onTap: _clearDebugLogs,
+                  isDark: isDark,
+                ),
+              ], isDark),
+            ),
+            SliverToBoxAdapter(
+              child: _buildSection('About', Icons.info_outline, [
+                _buildActionTile(
+                  icon: Icons.security,
+                  title: 'Privacy Policy',
+                  subtitle: 'Read our privacy policy',
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Privacy Policy'),
+                        content: const SingleChildScrollView(
+                          child: Text(
+                            'Your privacy is our priority. HabitRise is a fully offline application. '
+                            'We do not collect, store, or share any of your personal data, habits, logs, '
+                            'or biometric metrics on any external servers. All information remains securely '
+                            'saved on your local device.',
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  isDark: isDark,
+                ),
+                _buildActionTile(
+                  icon: Icons.star_outline,
+                  title: 'Rate the App',
+                  subtitle: 'Support us on the App Store',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon!')),
+                    );
+                  },
+                  isDark: isDark,
+                ),
+                _buildActionTile(
+                  icon: Icons.feedback_outlined,
+                  title: 'Send Feedback',
+                  subtitle: 'Help us improve HabitRise',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon!')),
+                    );
+                  },
                   isDark: isDark,
                 ),
               ], isDark),
@@ -617,6 +684,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
               ],
             ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.primary500,
           ),
         ],
       ),

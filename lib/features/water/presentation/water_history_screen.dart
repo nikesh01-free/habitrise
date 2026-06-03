@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:habitrise/core/theme/app_colors.dart';
+import 'package:habitrise/core/theme/app_radius.dart';
 import 'package:habitrise/core/theme/app_text_styles.dart';
 import 'package:habitrise/core/theme/app_icons.dart';
 import 'package:habitrise/core/constants/app_assets.dart';
 import 'package:habitrise/core/widgets/app_toast.dart';
 import 'package:habitrise/core/widgets/app_modal.dart';
 import 'package:habitrise/core/widgets/app_empty_state.dart';
+import 'package:habitrise/core/widgets/app_input.dart';
+import 'package:habitrise/core/widgets/app_button.dart';
+import 'package:habitrise/core/widgets/app_loading_state.dart';
 import 'package:habitrise/core/utils/app_date_utils.dart';
 import 'package:habitrise/features/water/presentation/providers/water_providers.dart';
 import 'package:habitrise/features/water/data/models/water_log_model.dart';
@@ -45,6 +50,13 @@ class WaterHistoryScreen extends ConsumerWidget {
     );
   }
 
+  void _showAddWaterSheet(BuildContext context) {
+    AppModal.showSheet(
+      context: context,
+      child: const _HistoryAddWaterSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final logsAsync = ref.watch(todayWaterLogsProvider);
@@ -64,12 +76,14 @@ class WaterHistoryScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: logsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingState(),
         error: (e, _) => Center(
           child: AppEmptyState(
             icon: AppIcons.error,
-            title: 'Error',
+            title: 'Failed to load water logs',
             description: e.toString(),
+            buttonLabel: 'Retry',
+            onPressed: () => ref.refresh(todayWaterLogsProvider),
           ),
         ),
         data: (logs) {
@@ -99,7 +113,7 @@ class WaterHistoryScreen extends ConsumerWidget {
                   (ctx, index) {
                     final e = sorted[index];
                     return Padding(
-                      padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                       child: Slidable(
                         key: ValueKey(e.id),
                         endActionPane: ActionPane(
@@ -132,12 +146,20 @@ class WaterHistoryScreen extends ConsumerWidget {
           );
         },
       ),
+      floatingActionButton: logsAsync.maybeWhen(
+        data: (logs) => FloatingActionButton(
+          onPressed: () => _showAddWaterSheet(context),
+          backgroundColor: waterBlue,
+          child: const Icon(Icons.add, color: Colors.white, size: 28),
+        ).animate().scale(delay: 200.ms, duration: 400.ms, curve: Curves.easeOutBack),
+        orElse: () => null,
+      ),
     );
   }
 
   Widget _buildHeader(int total, int count, Color color, bool isDark) {
     return Container(
-      margin: EdgeInsets.fromLTRB(20, 20, 20, 0),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -267,6 +289,154 @@ class WaterHistoryScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HistoryAddWaterSheet extends ConsumerStatefulWidget {
+  const _HistoryAddWaterSheet();
+
+  @override
+  ConsumerState<_HistoryAddWaterSheet> createState() => _HistoryAddWaterSheetState();
+}
+
+class _HistoryAddWaterSheetState extends ConsumerState<_HistoryAddWaterSheet> {
+  late final TextEditingController _customCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _customCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _customCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Add Water Intake', style: AppTextStyles.h2),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _waterPreset(150, 'Glass'),
+              _waterPreset(250, 'Normal'),
+              _waterPreset(500, 'Bottle'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: AppInput(
+                  label: 'Custom Amount',
+                  hint: 'Amount in ml',
+                  controller: _customCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(5),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              AppButton(
+                label: 'Add',
+                size: AppButtonSize.md,
+                onPressed: () async {
+                  final text = _customCtrl.text.trim();
+                  if (text.isNotEmpty) {
+                    final amount = int.tryParse(text);
+                    if (amount != null && amount > 0) {
+                      HapticFeedback.mediumImpact();
+                      Navigator.pop(context);
+                      try {
+                        await ref.read(waterControllerProvider).logWater(amount);
+                        if (context.mounted) {
+                          AppToast.show(
+                            context,
+                            'Added ${amount}ml water!',
+                            type: AppToastType.success,
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          AppToast.show(
+                            context,
+                            e.toString().replaceAll('Exception: ', ''),
+                            type: AppToastType.error,
+                          );
+                        }
+                      }
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _waterPreset(int amount, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: () async {
+        Navigator.pop(context); // close amount picker
+        try {
+          await ref.read(waterControllerProvider).logWater(amount);
+          if (context.mounted) {
+            AppToast.show(
+              context,
+              'Added ${amount}ml water!',
+              type: AppToastType.success,
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            AppToast.show(
+              context,
+              e.toString().replaceAll('Exception: ', ''),
+              type: AppToastType.error,
+            );
+          }
+        }
+      },
+      borderRadius: AppRadius.cardRadius,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? AppNeutral.n800 : AppNeutral.n50,
+          borderRadius: AppRadius.cardRadius,
+          border: Border.all(color: isDark ? AppNeutral.n700 : AppNeutral.n200),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              AppIcons.water,
+              color: AppFeatureColors.waterIcon,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${amount}ml',
+              style: AppTextStyles.bodyM.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(label, style: AppTextStyles.bodyS),
+          ],
+        ),
       ),
     );
   }

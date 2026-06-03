@@ -74,12 +74,21 @@ class AppToast extends StatelessWidget {
     );
   }
 
+  static OverlayEntry? _currentEntry;
+
   static void show(
     BuildContext context,
     String message, {
     AppToastType type = AppToastType.info,
   }) {
     final overlay = Overlay.of(context);
+
+    // Dismiss any existing toast before inserting a new one
+    if (_currentEntry != null && _currentEntry!.mounted) {
+      _currentEntry!.remove();
+      _currentEntry = null;
+    }
+
     late OverlayEntry entry;
 
     entry = OverlayEntry(
@@ -92,7 +101,10 @@ class AppToast extends StatelessWidget {
           child: Dismissible(
             key: UniqueKey(),
             direction: DismissDirection.down,
-            onDismissed: (_) => entry.remove(),
+            onDismissed: (_) {
+              entry.remove();
+              if (_currentEntry == entry) _currentEntry = null;
+            },
             child: AppToast(message: message, type: type)
                 .animate()
                 .fadeIn(duration: 250.ms)
@@ -102,12 +114,14 @@ class AppToast extends StatelessWidget {
       ),
     );
 
+    _currentEntry = entry;
     overlay.insert(entry);
 
     // Auto dismiss after 3 seconds
     Future.delayed(const Duration(milliseconds: 3000), () {
       if (entry.mounted) {
         entry.remove();
+        if (_currentEntry == entry) _currentEntry = null;
       }
     });
   }

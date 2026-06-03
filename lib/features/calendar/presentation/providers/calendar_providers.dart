@@ -61,7 +61,6 @@ final daySummaryProvider = FutureProvider.family.autoDispose<DaySummary, DateTim
   final sleepRepo = ref.read(sleepRepositoryProvider);
 
   // Habits logic
-  final allHabits = habitRepo.getAllActiveHabits();
   final logs = habitRepo.getLogsForDate(dateStr);
   final completedHabits = logs.where((l) => l.status == 'completed').length;
 
@@ -100,7 +99,7 @@ final daySummaryProvider = FutureProvider.family.autoDispose<DaySummary, DateTim
   return DaySummary(
     dateStr: dateStr,
     habitsCompleted: completedHabits,
-    habitsTotal: allHabits.length,
+    habitsTotal: logs.isEmpty ? 0 : logs.length,
     waterTotalMl: waterSum,
     stepsTotal: stepsVal,
     stepsGoal: goalVal,

@@ -35,7 +35,7 @@ class GymWorkoutLogModel {
     };
   }
 
-  factory GymWorkoutLogModel.fromMap(Map<dynamic, dynamic> map) {
+  factory GymWorkoutLogModel.fromMap(Map<String, dynamic> map) {
     return GymWorkoutLogModel(
       id: map['id'] as String? ?? '',
       scheduleId: map['scheduleId'] as String?,

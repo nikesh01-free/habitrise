@@ -42,6 +42,7 @@ class FocusTimerState {
 class FocusTimerNotifier extends Notifier<FocusTimerState> {
   Timer? _ticker;
   DateTime? _targetEndTime;
+  int? _pausedRemainingSeconds;
 
   @override
   FocusTimerState build() {
@@ -107,15 +108,17 @@ class FocusTimerNotifier extends Notifier<FocusTimerState> {
 
   void pause() {
     _ticker?.cancel();
+    // Snapshot the remaining seconds at the moment of pause before any tick can update it
+    _pausedRemainingSeconds = state.remainingSeconds;
     state = state.copyWith(isRunning: false, isPaused: true);
-    // _targetEndTime is invalidated now, the remaining seconds are stored in state.
+    // _targetEndTime is now invalidated; we will rebuild it from _pausedRemainingSeconds on resume.
   }
 
   void resume() {
-    if (state.remainingSeconds <= 0) return;
-    _targetEndTime = DateTime.now().add(
-      Duration(seconds: state.remainingSeconds),
-    );
+    final remaining = _pausedRemainingSeconds ?? state.remainingSeconds;
+    if (remaining <= 0) return;
+    _targetEndTime = DateTime.now().add(Duration(seconds: remaining));
+    _pausedRemainingSeconds = null;
     state = state.copyWith(isRunning: true, isPaused: false);
     _startTicker();
   }

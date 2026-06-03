@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +9,8 @@ import 'package:habitrise/core/theme/app_icons.dart';
 import 'package:habitrise/core/widgets/app_loading_state.dart';
 import 'package:habitrise/core/widgets/app_empty_state.dart';
 import 'package:habitrise/core/constants/app_assets.dart';
+import 'package:habitrise/features/habits/presentation/providers/habit_providers.dart';
+import 'package:habitrise/core/widgets/app_card.dart';
 import 'providers/analytics_providers.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
@@ -21,6 +24,7 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     with AutomaticKeepAliveClientMixin {
   int _selectedChartIndex = 0;
+  bool _weeklyReviewExpanded = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -87,7 +91,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
               return Column(
                 children: [
                   _buildHeader(data, isDark),
-                  SizedBox(height: 24),
+                  _buildCollapsibleWeeklyReview(data, isDark),
+                  const SizedBox(height: 24),
                   _buildChartSelector(isDark),
                   _buildMainChart(data, isDark),
                   _buildMetricsGrid(data, isDark),
@@ -416,15 +421,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
                         final idx = value.toInt();
-                        if (idx < 0 || idx >= days.length) {
+                        if (idx < 0 || idx >= data.last7Days.length) {
                           return const SizedBox();
                         }
+                        final dayLabel = DateFormat('E')
+                            .format(DateTime.parse(data.last7Days[idx].dateStr))[0];
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            days[idx],
+                            dayLabel,
                             style: AppTextStyles.bodyS.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -521,11 +527,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 1.6,
+            childAspectRatio: 1.5,
             children: metrics.asMap().entries.map((entry) {
               final metric = entry.value;
               return Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: isDark ? AppNeutral.n800 : Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -665,6 +671,275 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
         ],
       ),
     ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.05);
+  }
+
+  Widget _buildCollapsibleWeeklyReview(AnalyticsSummary data, bool isDark) {
+    final habitsAsync = ref.watch(activeHabitsProvider);
+    final activeCount = habitsAsync.value?.length ?? 0;
+    final avgSleep = data.totalSleepMinutes / 7 / 60;
+    final avgWater = data.totalWater / 7;
+
+    int completions = 0;
+    for (var day in data.last7Days) {
+      if (day.habitCompletionRatio > 0) {
+        completions += (day.habitCompletionRatio * activeCount).round();
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppNeutral.n800 : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppNeutral.n700 : AppNeutral.n200,
+        ),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _weeklyReviewExpanded,
+          onExpansionChanged: (val) => setState(() => _weeklyReviewExpanded = val),
+          leading: const Icon(
+            Icons.insights_rounded,
+            color: AppColors.primary500,
+          ),
+          title: Text(
+            'Weekly Review Report',
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? Colors.white : AppNeutral.n900,
+            ),
+          ),
+          subtitle: Text(
+            _weeklyReviewExpanded ? 'Tap to collapse' : 'Tap to expand summary & streaks',
+            style: AppTextStyles.bodyS.copyWith(
+              color: AppNeutral.n500,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              child: Column(
+                children: [
+                  _buildWeeklyHeroSection(
+                    data.currentStreak,
+                    data.longestStreak,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.habits,
+                    label: 'Active Habits',
+                    value: '$activeCount',
+                    color: AppFeatureColors.habitIcon,
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: Icons.done_all_rounded,
+                    label: 'Habits Logged',
+                    value: '$completions',
+                    color: AppSemantic.success,
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.water,
+                    label: 'Avg. Daily Water',
+                    value: '${avgWater.toStringAsFixed(0)} ml',
+                    color: AppFeatureColors.waterIcon,
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.steps,
+                    label: 'Total Steps',
+                    value: '${data.totalSteps}',
+                    color: AppFeatureColors.stepIcon,
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.sleep,
+                    label: 'Avg. Sleep',
+                    value: '${avgSleep.toStringAsFixed(1)} hrs',
+                    color: AppFeatureColors.sleepIcon,
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.focus,
+                    label: 'Focus Time',
+                    value: '${data.totalFocusMinutes} mins',
+                    color: const Color(0xFF8B5CF6),
+                  ),
+                  _buildWeeklyStatRow(
+                    icon: AppIcons.meals,
+                    label: 'Meals Logged',
+                    value: '${data.totalMeals}',
+                    color: AppFeatureColors.mealIcon,
+                  ),
+                  const SizedBox(height: 24),
+                  AppCard(
+                    backgroundColor: isDark
+                        ? AppColors.primary500.withAlpha(20)
+                        : AppColors.primary50,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.celebration_rounded,
+                          color: AppColors.primary600,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Keep going!',
+                          style: AppTextStyles.h3.copyWith(
+                            color: AppColors.primary600,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Consistency is key to permanent lifestyle changes.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyM.copyWith(
+                            color: isDark ? AppNeutral.n300 : AppNeutral.n700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyHeroSection(int current, int best) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2D3748), Color(0xFF1A202C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.auto_awesome_outlined,
+            color: Colors.amber,
+            size: 32,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Past 7 Days Report',
+            style: AppTextStyles.h2.copyWith(color: Colors.white, fontSize: 20),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Here is a snapshot of your lifestyle metrics.',
+            style: AppTextStyles.bodyS.copyWith(color: Colors.white70),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _weeklyHeroStat(
+                'Current Streak',
+                '$current',
+                Icons.local_fire_department,
+                Colors.orange,
+              ),
+              _weeklyHeroStat(
+                'Best Streak',
+                '$best',
+                Icons.military_tech,
+                Colors.amber,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _weeklyHeroStat(String label, String val, IconData ic, Color col) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(ic, color: col, size: 18),
+            const SizedBox(width: 4),
+            Text(
+              val,
+              style: AppTextStyles.h1.copyWith(
+                color: Colors.white,
+                fontSize: 26,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          label,
+          style: AppTextStyles.bodyS.copyWith(
+            color: Colors.white60,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyStatRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? AppNeutral.n900 : AppNeutral.n50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? AppNeutral.n800 : AppNeutral.n200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withAlpha(25),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: AppTextStyles.bodyM.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppNeutral.n300 : AppNeutral.n700,
+              fontSize: 13,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: AppTextStyles.h4.copyWith(
+              color: isDark ? Colors.white : AppNeutral.n900,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -9,6 +9,8 @@ import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/app_input.dart';
 
 import '../../../profile/presentation/providers/profile_providers.dart';
+import '../../../steps/presentation/providers/step_providers.dart';
+import '../../../../core/constants/validation_constants.dart';
 
 class ProfileEditBottomSheet extends ConsumerStatefulWidget {
   const ProfileEditBottomSheet({super.key});
@@ -58,18 +60,20 @@ class _ProfileEditBottomSheetState
     final steps = int.tryParse(stepCtrl.text.trim()) ?? 8000;
     final water = int.tryParse(waterCtrl.text.trim()) ?? 2500;
 
-    if (steps < 100 || steps > 100000) {
+    if (steps < ValidationConstants.minStepGoal ||
+        steps > ValidationConstants.maxStepGoal) {
       AppToast.show(
         context,
-        'Steps must be 100–100,000',
+        'Steps must be ${ValidationConstants.minStepGoal}–${ValidationConstants.maxStepGoal}',
         type: AppToastType.warning,
       );
       return;
     }
-    if (water < 100 || water > 15000) {
+    if (water < ValidationConstants.minWaterGoalMl ||
+        water > ValidationConstants.maxWaterMl) {
       AppToast.show(
         context,
-        'Water must be 100–15,000 ml',
+        'Water must be ${ValidationConstants.minWaterGoalMl}–${ValidationConstants.maxWaterMl} ml',
         type: AppToastType.warning,
       );
       return;
@@ -85,6 +89,14 @@ class _ProfileEditBottomSheetState
             stepGoal: steps,
             waterGoal: water,
           );
+      
+      // Sync the steps goal in the step controller/provider immediately
+      try {
+        await ref.read(stepProvider.notifier).updateGoal(steps);
+      } catch (_) {
+        // Silent fallback in case steps module fails to sync
+      }
+
       if (mounted) {
         Navigator.pop(context);
         AppToast.show(context, 'Profile updated', type: AppToastType.success);
@@ -137,7 +149,7 @@ class _ProfileEditBottomSheetState
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            initialValue: selectedType,
+            value: selectedType,
             dropdownColor: isDark ? AppNeutral.n800 : Colors.white,
             style: AppTextStyles.bodyM.copyWith(
               color: isDark ? Colors.white : AppNeutral.n900,

@@ -12,6 +12,7 @@ import 'package:habitrise/core/widgets/app_empty_state.dart';
 import 'package:habitrise/core/utils/app_date_utils.dart';
 import 'package:habitrise/features/focus/presentation/providers/focus_providers.dart';
 import 'package:habitrise/features/focus/data/models/focus_session_model.dart';
+import '../../../../core/widgets/app_loading_state.dart';
 
 class FocusHistoryScreen extends ConsumerWidget {
   const FocusHistoryScreen({super.key});
@@ -65,12 +66,14 @@ class FocusHistoryScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: sessionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingState(),
         error: (e, _) => Center(
           child: AppEmptyState(
             icon: AppIcons.error,
-            title: 'Error',
+            title: 'Failed to load focus history',
             description: e.toString(),
+            buttonLabel: 'Retry',
+            onPressed: () => ref.refresh(todayFocusSessionsProvider),
           ),
         ),
         data: (sessions) {

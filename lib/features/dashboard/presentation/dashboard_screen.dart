@@ -4,7 +4,6 @@ import 'package:habitrise/core/theme/app_text_styles.dart';
 import 'package:habitrise/core/theme/app_colors.dart';
 import 'package:habitrise/core/theme/app_radius.dart';
 import 'package:habitrise/core/theme/app_icons.dart';
-import 'package:habitrise/features/analytics/presentation/weekly_review_screen.dart';
 import 'package:habitrise/features/analytics/presentation/analytics_screen.dart';
 import 'package:habitrise/features/focus/presentation/focus_screen.dart';
 import 'package:habitrise/features/settings/presentation/settings_screen.dart';
@@ -15,6 +14,12 @@ import 'widgets/sections/dashboard_health_section.dart';
 import 'widgets/sections/dashboard_focus_mood_section.dart';
 import 'widgets/sections/dashboard_habit_section.dart';
 import 'widgets/quick_add_bottom_sheet.dart';
+import '../../habits/presentation/providers/habit_providers.dart';
+import 'widgets/getting_started_card.dart';
+import '../../../core/widgets/offline_banner_widget.dart';
+import 'widgets/horizontal_feature_chips.dart';
+import '../../gym/presentation/widgets/gym_dashboard_section.dart';
+import '../../settings/presentation/providers/settings_providers.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -71,7 +76,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _DashboardBody(onStartFocus: () => _onTabTapped(1)),
+                  _DashboardBody(
+                    onStartFocus: () => _onTabTapped(1),
+                    onTapWeeklyReview: () => _onTabTapped(2),
+                  ),
                   const FocusScreen(key: PageStorageKey('focus_scroller')),
                   AnalyticsScreen(
                     key: const PageStorageKey('analytics_scroller'),
@@ -98,17 +106,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: bottomSafe > 0 ? bottomSafe + 76 : 92),
-        child: FloatingActionButton(
-          onPressed: () => QuickAddBottomSheet.show(
-            context,
-            onNavigateToFocus: () => _onTabTapped(1),
+      floatingActionButton: AnimatedOpacity(
+        opacity: _currentIndex == 0 ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: IgnorePointer(
+          ignoring: _currentIndex != 0,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottomSafe > 0 ? bottomSafe + 76 : 92),
+            child: FloatingActionButton(
+              onPressed: () => QuickAddBottomSheet.show(
+                context,
+                onNavigateToFocus: () => _onTabTapped(1),
+              ),
+              backgroundColor: AppColors.primary500,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, color: Colors.white, size: 28),
+            ),
           ),
-          backgroundColor: AppColors.primary500,
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add, color: Colors.white, size: 28),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -147,7 +162,7 @@ class _FloatingNavBar extends StatelessWidget {
         children: [
           _NavItem(0, AppIcons.dashboard, 'Home', currentIndex, onTap, isDark),
           _NavItem(1, AppIcons.focus, 'Focus', currentIndex, onTap, isDark),
-          _NavItem(2, AppIcons.analytics, 'Stats', currentIndex, onTap, isDark),
+          _NavItem(2, AppIcons.analytics, 'Insights', currentIndex, onTap, isDark),
           _NavItem(3, AppIcons.calendar, 'Calendar', currentIndex, onTap, isDark),
           _NavItem(4, AppIcons.settings, 'Settings', currentIndex, onTap, isDark),
         ],
@@ -226,8 +241,12 @@ class _NavItem extends StatelessWidget {
 
 class _DashboardBody extends StatefulWidget {
   final VoidCallback onStartFocus;
+  final VoidCallback onTapWeeklyReview;
 
-  const _DashboardBody({required this.onStartFocus});
+  const _DashboardBody({
+    required this.onStartFocus,
+    required this.onTapWeeklyReview,
+  });
 
   @override
   State<_DashboardBody> createState() => _DashboardBodyState();
@@ -235,6 +254,11 @@ class _DashboardBody extends StatefulWidget {
 
 class _DashboardBodyState extends State<_DashboardBody>
     with AutomaticKeepAliveClientMixin {
+  final GlobalKey _habitsKey = GlobalKey();
+  final GlobalKey _healthKey = GlobalKey();
+  final GlobalKey _focusKey = GlobalKey();
+  final GlobalKey _gymKey = GlobalKey();
+
   @override
   bool get wantKeepAlive => true;
 
@@ -243,49 +267,106 @@ class _DashboardBodyState extends State<_DashboardBody>
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Silent refresh - no UI feedback
-      },
-      child: SingleChildScrollView(
-        key: const PageStorageKey('dashboard_scroller'),
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer(
+      builder: (context, ref, child) {
+        final unlocked = ref.watch(dashboardUnlockedProvider);
+        return Column(
           children: [
-            const DashboardHeaderSection(),
-            const SizedBox(height: 24),
-            const DashboardProgressSection(),
-            const SizedBox(height: 24),
-            const DashboardHealthSection(),
-            const SizedBox(height: 24),
-            const DashboardHabitSection(),
-            const SizedBox(height: 24),
-            DashboardFocusMoodSection(onStartFocus: widget.onStartFocus),
-            const SizedBox(height: 32),
-            _WeeklyReviewBanner(isDark: isDark),
+            const OfflineBannerWidget(),
+            Expanded(
+              child: !unlocked
+                  ? SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const DashboardHeaderSection(),
+                          const SizedBox(height: 24),
+                          const GettingStartedCard(),
+                          const SizedBox(height: 32),
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Text(
+                                'Your personalized metrics will appear here once you begin your journey.',
+                                style: AppTextStyles.bodyS.copyWith(
+                                  color: isDark ? AppNeutral.n500 : AppNeutral.n400,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        // Silent refresh - no UI feedback
+                      },
+                      child: SingleChildScrollView(
+                        key: const PageStorageKey('dashboard_scroller'),
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 140),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const DashboardHeaderSection(),
+                            const SizedBox(height: 12),
+                            HorizontalFeatureChips(
+                              anchors: {
+                                'habits': _habitsKey,
+                                'health': _healthKey,
+                                'focus': _focusKey,
+                                'gym': _gymKey,
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            const DashboardProgressSection(),
+                            const SizedBox(height: 24),
+                            DashboardHealthSection(key: _healthKey),
+                            const SizedBox(height: 24),
+                            DashboardHabitSection(key: _habitsKey),
+                            const SizedBox(height: 24),
+                            DashboardFocusMoodSection(
+                              key: _focusKey,
+                              onStartFocus: widget.onStartFocus,
+                            ),
+                            if (ref.watch(settingsProvider).gymFeatureEnabled) ...[
+                              const SizedBox(height: 24),
+                              GymDashboardSection(key: _gymKey),
+                            ],
+                            const SizedBox(height: 32),
+                            _WeeklyReviewBanner(
+                              isDark: isDark,
+                              onTap: widget.onTapWeeklyReview,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 class _WeeklyReviewBanner extends StatelessWidget {
   final bool isDark;
+  final VoidCallback onTap;
 
-  const _WeeklyReviewBanner({required this.isDark});
+  const _WeeklyReviewBanner({
+    required this.isDark,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const WeeklyReviewScreen()),
-        );
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

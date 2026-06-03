@@ -77,9 +77,6 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _buildHeader(isDark),
-          ),
-          SliverToBoxAdapter(
             child: _buildTemplates(isDark),
           ),
           SliverToBoxAdapter(
@@ -91,51 +88,16 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
     );
   }
 
-  Widget _buildHeader(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark ? [const Color(0xFF1E1E2E), const Color(0xFF16213E)] : [AppColors.primary500, AppColors.primary600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: AppColors.primary500.withAlpha(50), blurRadius: 16, offset: const Offset(0, 6))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withAlpha(40), shape: BoxShape.circle),
-            child: const Icon(AppIcons.add, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('New Habit', style: AppTextStyles.h3.copyWith(color: Colors.white)),
-                Text('Create a habit to track daily', style: AppTextStyles.bodyS.copyWith(color: Colors.white70)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn().slideY(begin: -0.1);
-  }
-
   Widget _buildTemplates(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('QUICK TEMPLATES', style: AppTextStyles.bodyS.copyWith(fontWeight: FontWeight.w800, letterSpacing: 1.2, color: AppNeutral.n500)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 100,
+            height: 120,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: habitTemplates.length,

@@ -7,8 +7,56 @@ import '../../data/models/habit_log_model.dart';
 import '../../../../core/services/notification_service.dart';
 import 'package:habitrise/features/rewards/presentation/controllers/reward_controller.dart';
 
+import 'package:hive/hive.dart';
+import '../../../../core/storage/local_box_names.dart';
+import '../../../../core/utils/app_date_utils.dart';
+import '../../../water/presentation/providers/water_providers.dart';
+
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {
   return HabitRepository();
+});
+
+final habitStreakProvider = Provider.family<int, String>((ref, habitId) {
+  final logBox = Hive.box(LocalBoxNames.habitLogs);
+  int streak = 0;
+  DateTime date = DateTime.now();
+
+  // Check today first
+  String todayKey = AppDateUtils.dateToKey(date);
+  final todayVal = logBox.get('${habitId}_$todayKey');
+  bool completedToday = false;
+  if (todayVal != null && todayVal is Map) {
+    completedToday = todayVal['status'] == 'completed';
+  }
+
+  if (completedToday) {
+    streak++;
+    date = date.subtract(const Duration(days: 1));
+    while (true) {
+      String dateKey = AppDateUtils.dateToKey(date);
+      final val = logBox.get('${habitId}_$dateKey');
+      if (val != null && val is Map && val['status'] == 'completed') {
+        streak++;
+        date = date.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+  } else {
+    // If not completed today, check starting from yesterday
+    date = date.subtract(const Duration(days: 1));
+    while (true) {
+      String dateKey = AppDateUtils.dateToKey(date);
+      final val = logBox.get('${habitId}_$dateKey');
+      if (val != null && val is Map && val['status'] == 'completed') {
+        streak++;
+        date = date.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+  }
+  return streak;
 });
 
 class ActiveHabitsNotifier extends AutoDisposeAsyncNotifier<List<HabitModel>> {
@@ -131,6 +179,7 @@ class HabitController {
       }
     }
 
+    ref.invalidate(habitStreakProvider(habitId));
     await ref.read(habitLogsForDateProvider(date).notifier).refresh();
   }
 
@@ -201,4 +250,16 @@ class HabitController {
 
 final habitControllerProvider = Provider<HabitController>((ref) {
   return HabitController(ref);
+});
+
+final dashboardUnlockedProvider = Provider.autoDispose<bool>((ref) {
+  final habitsAsync = ref.watch(activeHabitsProvider);
+  final waterTotal = ref.watch(todayWaterTotalProvider);
+
+  final hasHabits = habitsAsync.maybeWhen(
+    data: (list) => list.isNotEmpty,
+    orElse: () => false,
+  );
+
+  return hasHabits || waterTotal > 0;
 });

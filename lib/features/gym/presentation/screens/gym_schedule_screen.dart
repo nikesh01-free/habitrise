@@ -12,6 +12,8 @@ import '../../../../core/widgets/app_input.dart';
 import '../providers/gym_providers.dart';
 import '../../data/models/gym_schedule_model.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/widgets/app_loading_state.dart';
+import '../../../../core/widgets/app_empty_state.dart';
 
 class GymScheduleScreen extends ConsumerStatefulWidget {
   const GymScheduleScreen({super.key});
@@ -71,8 +73,16 @@ class _GymScheduleScreenState extends ConsumerState<GymScheduleScreen> {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading schedule: $e')),
+        loading: () => const AppLoadingState(),
+        error: (e, _) => Center(
+          child: AppEmptyState(
+            icon: AppIcons.error,
+            title: 'Failed to load gym routine',
+            description: e.toString(),
+            buttonLabel: 'Retry',
+            onPressed: () => ref.refresh(gymScheduleProvider),
+          ),
+        ),
       ),
       ),
     );
